@@ -3,26 +3,44 @@ const path = require('path');
 const heicConvert = require('heic-convert');
 const readline = require('readline');
 
-let outputFilename = ''; //base name of converted file
+let outputFilename = '';
+let counterFilesLength = 0;
+let directoryPath;
 
 // The directory where your HEIC images are stored
-const inputDirectory = './heic-files'; 
-let counterFilesLength = 0;
-
-
-// The directory where you want to save the converted JPG images
-const outputDirectory = './jpg-files';
+const inputDirectory = './files'; 
 
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
 
-rl.question('Enter the file base name: {enter name, not the rest}-{fileNumber}.jpg ', function(fileName) {
-  outputFilename = fileName;
-  handleFileConversion();
-  rl.close();
-})
+function askQuestion(question) {
+  return new Promise((resolve) => {
+    rl.question(question, (answer) => {
+      resolve(answer);
+    });
+  });
+}
+
+askQuestion('Enter the folder name: ')
+  .then((directoryDirection) => {
+    directoryPath = path.join(__dirname, `./files/${directoryDirection}`);
+    fs.mkdir(directoryPath, (err) => {
+      if (err) return console.error(err);
+  });
+    return askQuestion('Enter the file base name: ');
+  })
+  .then((fileName) => {
+    outputFilename = fileName;
+    handleFileConversion();
+    rl.close();
+  })
+  .catch((error) => {
+    console.error(error);
+    rl.close();
+  });
+
 
 
 // Read the list of files in the input directory
@@ -50,7 +68,7 @@ function handleFileConversion() {
             quality: 1
           });
   
-          const outputFilePath = path.join(outputDirectory, `${outputFilename}-${counterFilesLength}.jpg`);
+          const outputFilePath = path.join(directoryPath, `${outputFilename}-${counterFilesLength}.jpg`);
           fs.writeFileSync(outputFilePath, outputBuffer);
   
           counterFilesLength++
